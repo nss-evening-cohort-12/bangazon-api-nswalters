@@ -115,32 +115,29 @@ class ProductTests(APITestCase):
 
         # Create some products to add
         self.test_create_product()
+        self.test_create_product()
 
         # Add products to order
 
-        # 1st item
-        url = "/cart"
-        data = {"product_id": 1}
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        response = self.client.post(url, data, format='json')
+        # Add three of the same item which -SHOULD- be returned in the
+        # 'number_sold=3' query
+        for i in range(3):
+            url = "/cart"
+            data = {"product_id": 1}
+            self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+            response = self.client.post(url, data, format='json')
 
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+            self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-        # 2nd item
-        url = "/cart"
-        data = {"product_id": 1}
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        response = self.client.post(url, data, format='json')
+        # Add two different items which -SHOULD NOT- be returned in the
+        # 'number_sold=3' query
+        for i in range(2):
+            url = "/cart"
+            data = {"product_id": 2}
+            self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+            response = self.client.post(url, data, format='json')
 
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-
-        # 3rd item
-        url = "/cart"
-        data = {"product_id": 1}
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        response = self.client.post(url, data, format='json')
-
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+            self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         # Add payment_type to order
         url = "/orders/1"
