@@ -52,9 +52,11 @@ class LineItems(ViewSet):
         try:
             # line_item = OrderProduct.objects.get(pk=pk)
             customer = Customer.objects.get(user=request.auth.user)
-            line_item = OrderProduct.objects.get(pk=pk, order__customer=customer)
+            line_item = OrderProduct.objects.get(
+                pk=pk, order__customer=customer)
 
-            serializer = LineItemSerializer(line_item, context={'request': request})
+            serializer = LineItemSerializer(
+                line_item, context={'request': request})
 
             return Response(serializer.data)
 
@@ -77,7 +79,10 @@ class LineItems(ViewSet):
         """
         try:
             customer = Customer.objects.get(user=request.auth.user)
-            order_product = OrderProduct.objects.get(pk=pk, order__customer=customer)
+            order_product = OrderProduct.objects.get(
+                pk=pk, order__customer=customer)
+
+            order_product.delete()
 
             return Response({}, status=status.HTTP_204_NO_CONTENT)
 
