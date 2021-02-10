@@ -18,6 +18,7 @@ class LineItemSerializer(serializers.HyperlinkedModelSerializer):
         )
         fields = ('id', 'url', 'order', 'product')
 
+
 class LineItems(ViewSet):
     """Line items for Bangazon orders"""
 
@@ -36,7 +37,7 @@ class LineItems(ViewSet):
 
     def retrieve(self, request, pk=None):
         """
-        @api {GET} /cart/:id DELETE line item from cart
+        @api {GET} /lineitems/:id DELETE line item from cart
         @apiName RemoveLineItem
         @apiGroup ShoppingCart
 
@@ -62,7 +63,7 @@ class LineItems(ViewSet):
 
     def destroy(self, request, pk=None):
         """
-        @api {DELETE} /cart/:id DELETE line item from cart
+        @api {DELETE} /lineitems/:id DELETE line item from cart
         @apiName RemoveLineItem
         @apiGroup ShoppingCart
 
