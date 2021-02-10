@@ -24,6 +24,7 @@ class OrderLineItemSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'product')
         depth = 1
 
+
 class OrderSerializer(serializers.HyperlinkedModelSerializer):
     """JSON serializer for customer orders"""
 
@@ -35,7 +36,8 @@ class OrderSerializer(serializers.HyperlinkedModelSerializer):
             view_name='order',
             lookup_field='id'
         )
-        fields = ('id', 'url', 'created_date', 'payment_type', 'customer', 'lineitems')
+        fields = ('id', 'url', 'created_date',
+                  'payment_type', 'customer', 'lineitems')
 
 
 class Orders(ViewSet):
@@ -84,7 +86,7 @@ class Orders(ViewSet):
 
     def update(self, request, pk=None):
         """
-        @api {PUT} /order/:id PUT new payment for order
+        @api {PUT} /orders/:id PUT new payment for order
         @apiName AddPayment
         @apiGroup Orders
 
@@ -104,7 +106,8 @@ class Orders(ViewSet):
         """
         customer = Customer.objects.get(user=request.auth.user)
         order = Order.objects.get(pk=pk, customer=customer)
-        order.payment_type = request.data["payment_type"]
+        order.payment_type = Payment.objects.get(
+            pk=request.data["payment_type"])
         order.save()
 
         return Response({}, status=status.HTTP_204_NO_CONTENT)
