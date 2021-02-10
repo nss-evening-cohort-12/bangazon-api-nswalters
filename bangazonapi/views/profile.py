@@ -11,6 +11,7 @@ from bangazonapi.models import Order, Customer, Product, OrderProduct, Favorite
 from .product import ProductSerializer
 from .order import OrderSerializer
 
+
 class Profile(ViewSet):
     """Request handlers for user profile info in the Bangazon Platform"""
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -62,7 +63,8 @@ class Profile(ViewSet):
         """
         try:
             current_user = Customer.objects.get(user__id=4)
-            serializer = ProfileSerializer(current_user, many=False, context={'request': request})
+            serializer = ProfileSerializer(
+                current_user, many=False, context={'request': request})
             return Response(serializer.data)
         except Exception as ex:
             return HttpResponseServerError(ex)
@@ -88,7 +90,8 @@ class Profile(ViewSet):
             @apiError (404) {String} message  Not found message.
             """
             try:
-                open_order = Order.objects.get(customer=current_user, payment_type=None)
+                open_order = Order.objects.get(
+                    customer=current_user, payment_type=None)
                 line_items = OrderProduct.objects.filter(order=open_order)
                 line_items.delete()
                 open_order.delete()
@@ -150,15 +153,16 @@ class Profile(ViewSet):
             @apiError (404) {String} message  Not found message
             """
             try:
-                open_order = Order.objects.get(customer=current_user, payment_type=None)
+                open_order = Order.objects.get(
+                    customer=current_user, payment_type=None)
                 line_items = OrderProduct.objects.filter(order=open_order)
-                line_items = LineItemSerializer(line_items, many=True, context={'request': request})
+                line_items = LineItemSerializer(
+                    line_items, many=True, context={'request': request})
 
                 cart = {}
-                cart["order"] = OrderSerializer(open_order, many=False, context={'request': request}).data
-                cart["order"]["line_items"] = line_items.data
+                cart["order"] = OrderSerializer(open_order, many=False, context={
+                                                'request': request}).data
                 cart["order"]["size"] = len(line_items.data)
-
 
             except Order.DoesNotExist as ex:
                 return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
@@ -221,7 +225,8 @@ class Profile(ViewSet):
             line_item.order = open_order
             line_item.save()
 
-            line_item_json = LineItemSerializer(line_item, many=False, context={'request': request})
+            line_item_json = LineItemSerializer(
+                line_item, many=False, context={'request': request})
 
             return Response(line_item_json.data)
 
@@ -290,10 +295,12 @@ class LineItemSerializer(serializers.HyperlinkedModelSerializer):
         serializers
     """
     product = ProductSerializer(many=False)
+
     class Meta:
         model = OrderProduct
         fields = ('id', 'product')
         depth = 1
+
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     """JSON serializer for customer profile
@@ -321,7 +328,8 @@ class ProfileSerializer(serializers.HyperlinkedModelSerializer):
             view_name='customer',
             lookup_field='id',
         )
-        fields = ('id', 'url', 'user', 'phone_number', 'address', 'payment_types')
+        fields = ('id', 'url', 'user', 'phone_number',
+                  'address', 'payment_types')
         depth = 1
 
 
@@ -351,7 +359,6 @@ class FavoriteSellerSerializer(serializers.HyperlinkedModelSerializer):
         model = Customer
         fields = ('id', 'url', 'user',)
         depth = 1
-
 
 
 class FavoriteSerializer(serializers.HyperlinkedModelSerializer):
