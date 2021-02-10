@@ -108,7 +108,7 @@ class ProductTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(json_response), 3)
 
-    def test_products_number_sold(self):
+    def test_products_number_sold_query_param(self):
         """
         Ensure we can filter products based on the number sold
         """
