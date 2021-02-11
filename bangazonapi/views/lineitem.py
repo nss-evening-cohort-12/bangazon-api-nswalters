@@ -37,20 +37,19 @@ class LineItems(ViewSet):
 
     def retrieve(self, request, pk=None):
         """
-        @api {GET} /lineitems/:id DELETE line item from cart
-        @apiName RemoveLineItem
+        @api {GET} /lineitems/:id GET line item from cart
+        @apiName GetLineItem
         @apiGroup ShoppingCart
 
         @apiHeader {String} Authorization Auth token
         @apiHeaderExample {String} Authorization
             Token 9ba45f09651c5b0c404f37a2d2572c026c146611
 
-        @apiParam {id} id Product Id to remove from cart
+        @apiParam {id} id LineItem (order_product) Id to get from cart
         @apiSuccessExample {json} Success
-            HTTP/1.1 204 No Content
+            HTTP/1.1 200 OK
         """
         try:
-            # line_item = OrderProduct.objects.get(pk=pk)
             customer = Customer.objects.get(user=request.auth.user)
             line_item = OrderProduct.objects.get(
                 pk=pk, order__customer=customer)
@@ -73,7 +72,7 @@ class LineItems(ViewSet):
         @apiHeaderExample {String} Authorization
             Token 9ba45f09651c5b0c404f37a2d2572c026c146611
 
-        @apiParam {id} id Product Id to remove from cart
+        @apiParam {id} id LineItem (order_product) Id to remove from cart
         @apiSuccessExample {json} Success
             HTTP/1.1 204 No Content
         """
