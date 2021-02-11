@@ -81,10 +81,22 @@ class Payments(ViewSet):
         """Handle GET requests to payment type resource"""
         payment_types = Payment.objects.all()
 
+        # Forcing the "query param" to be set as the current authenticated user.
+        #
+        # If supporting the 'customer' query param is required to provide
+        # results for a user other than the authenticated user at a later
+        # time, that should be handled by re-enabling the original filter
+        # call along with some sort of permissions check.
+
         customer_id = self.request.query_params.get('customer', None)
 
         if customer_id is not None:
-            payment_types = payment_types.filter(customer__id=customer_id)
+            # payment_types = payment_types.filter(customer__id=customer_id)
+            payment_types = payment_types.filter(
+                customer__user=request.auth.user)
+        else:
+            payment_types = payment_types.filter(
+                customer__user=request.auth.user)
 
         serializer = PaymentSerializer(
             payment_types, many=True, context={'request': request})
