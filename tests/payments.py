@@ -73,7 +73,18 @@ class PaymentTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Verify we only get the payment types belonging to the primary user
+        # when querying the `/paymenttypes` endpoint
         url = "/paymenttypes"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.get(url, None, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(json_response), 2)
+
+        # Verify we only get the payment types belonging to the primary user
+        # when querying the `/paymenttypes?customer=n` endpoint and query param
+        url = "/paymenttypes?customer=2"
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.get(url, None, format='json')
         json_response = json.loads(response.content)
