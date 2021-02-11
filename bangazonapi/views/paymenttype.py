@@ -83,10 +83,6 @@ class Payments(ViewSet):
 
         # Forcing the "query param" to be set as the current authenticated user.
         #
-        # After speaking with Mitchell, this was decided on to enforce the
-        # 'only the payment types added by the authenticated user should
-        # be returned' requirement of issue #8.
-        #
         # If supporting the 'customer' query param is required to provide
         # results for a user other than the authenticated user at a later
         # time, that should be handled by re-enabling the original filter
