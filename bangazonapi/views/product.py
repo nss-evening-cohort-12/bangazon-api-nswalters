@@ -1,5 +1,6 @@
 """View module for handling requests about products"""
 import base64
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.http import HttpResponseServerError
 from rest_framework.viewsets import ViewSet
@@ -104,7 +105,11 @@ class Products(ViewSet):
 
             new_product.image_path = data
 
-        new_product.clean_fields()
+        try:
+            new_product.clean_fields()
+        except ValidationError as ex:
+            return Response({"message": ex.args[0]}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         new_product.save()
 
         serializer = ProductSerializer(
