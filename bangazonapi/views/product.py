@@ -106,7 +106,7 @@ class Products(ViewSet):
             new_product.image_path = data
 
         try:
-            new_product.clean_fields()
+            new_product.clean_fields(exclude="image_path")
         except ValidationError as ex:
             return Response({"message": ex.args[0]}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -194,7 +194,7 @@ class Products(ViewSet):
         product.category = product_category
 
         try:
-            product.clean_fields()
+            product.clean_fields(exclude="image_path")
         except ValidationError as ex:
             return Response({"message": ex.args[0]}, status=status.HTTP_400_BAD_REQUEST)
 
