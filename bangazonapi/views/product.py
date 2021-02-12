@@ -104,6 +104,7 @@ class Products(ViewSet):
 
             new_product.image_path = data
 
+        new_product.clean_fields()
         new_product.save()
 
         serializer = ProductSerializer(
