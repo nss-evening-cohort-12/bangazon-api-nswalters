@@ -2,6 +2,7 @@ import json
 import datetime
 from rest_framework import status
 from rest_framework.test import APITestCase
+from bangazonapi.models import Product
 
 
 class ProductTests(APITestCase):
@@ -194,6 +195,118 @@ class ProductTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(json_response), 1)
         self.assertEqual(json_response[0]["id"], 1)
+
+    def test_validate_create_product_over_maximum_price(self):
+        """
+        Verify that we cannot have a product over the maximum allowed price
+        """
+        # Attempt to create a product with a price > the max
+        max_price = float(Product._meta.get_field(
+            'price').validators[1].limit_value)
+
+        url = "/products"
+        data = {
+            "name": "Kite",
+            "price": max_price + 1,
+            "quantity": 60,
+            "description": "It flies high",
+            "category_id": 1,
+            "location": "Pittsburgh"
+        }
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, data, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(json_response["message"]["price"][0][0],
+                         "Ensure this value is less than or equal to " + str(max_price) + ".")
+
+    def test_validate_update_product_over_maximum_price(self):
+        """
+        Verify that we cannot have a product over the maximum allowed price
+        """
+        # Create a base product
+        self.test_create_product()
+
+        # Get the current configured max_price from the MaxValueValidator
+        # on the 'price' field of the 'Product' model
+        max_price = float(Product._meta.get_field(
+            'price').validators[1].limit_value)
+
+        # Attempt to update a product and set the price > max_price
+        url = "/products/1"
+        data = {
+            "name": "Kite",
+            "price": max_price + 1,
+            "quantity": 40,
+            "description": "It flies very high",
+            "category_id": 1,
+            "created_date": datetime.date.today(),
+            "location": "Pittsburgh"
+        }
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.put(url, data, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(json_response["message"]["price"][0][0],
+                         "Ensure this value is less than or equal to " + str(max_price) + ".")
+
+    def test_validate_create_product_under_minimum_price(self):
+        """
+        Verify that we cannot have a product under the minimum allowed price
+        """
+        # Attempt to create a product with a price < the min
+        min_price = float(Product._meta.get_field(
+            'price').validators[0].limit_value)
+
+        url = "/products"
+        data = {
+            "name": "Kite",
+            "price": min_price - 1,
+            "quantity": 60,
+            "description": "It flies high",
+            "category_id": 1,
+            "location": "Pittsburgh"
+        }
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, data, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(json_response["message"]["price"][0][0],
+                         "Ensure this value is greater than or equal to " + str(min_price) + ".")
+
+    def test_validate_update_product_under_minimum_price(self):
+        """
+        Verify that we cannot have a product under the minimum allowed price
+        """
+        # Create a base product
+        self.test_create_product()
+
+        # Get the current configured max_price from the MaxValueValidator
+        # on the 'price' field of the 'Product' model
+        min_price = float(Product._meta.get_field(
+            'price').validators[0].limit_value)
+
+        # Attempt to update a product and set the price < min_price
+        url = "/products/1"
+        data = {
+            "name": "Kite",
+            "price": min_price - 1,
+            "quantity": 40,
+            "description": "It flies very high",
+            "category_id": 1,
+            "created_date": datetime.date.today(),
+            "location": "Pittsburgh"
+        }
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.put(url, data, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(json_response["message"]["price"][0][0],
+                         "Ensure this value is greater than or equal to " + str(min_price) + ".")
 
     # TODO: Delete product
 
