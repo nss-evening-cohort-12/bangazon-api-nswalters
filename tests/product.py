@@ -308,6 +308,37 @@ class ProductTests(APITestCase):
         self.assertEqual(json_response["message"]["price"][0][0],
                          "Ensure this value is greater than or equal to " + str(min_price) + ".")
 
+    def test_products_location_query_param(self):
+        """
+        Ensure we can filter products by their location
+        """
+
+        # Create initial product
+        self.test_create_product()
+
+        # Attempt to get our product based on the location
+        url = "/products?location=Pittsburgh"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.get(url, None, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(json_response), 1)
+        self.assertEqual(json_response[0]["name"], "Kite")
+        self.assertEqual(json_response[0]["price"], 14.99)
+        self.assertEqual(json_response[0]["quantity"], 60)
+        self.assertEqual(json_response[0]["description"], "It flies high")
+        self.assertEqual(json_response[0]["location"], "Pittsburgh")
+
+        # Attempt to get a product by location that doesn't exist
+        url = "/products?location=Philadelphia"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.get(url, None, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(json_response), 0)
+
     # TODO: Delete product
 
     # TODO: Product can be rated. Assert average rating exists.
