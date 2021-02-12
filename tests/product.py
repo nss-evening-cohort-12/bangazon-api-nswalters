@@ -158,6 +158,43 @@ class ProductTests(APITestCase):
         self.assertEqual(len(json_response), 1)
         self.assertEqual(json_response[0]["id"], 1)
 
+    def test_products_min_price_query_param(self):
+        """
+        Ensure we can filter products based on a given minimum price
+        """
+
+        # Create a product
+        self.test_create_product()
+
+        # Request products >= 15 dollars (should return no results)
+        url = "/products?min_price=15"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.get(url, None, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(json_response), 0)
+
+        # Request products >= 14 dollars (should return 1 result)
+        url = "/products?min_price=14"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.get(url, None, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(json_response), 1)
+        self.assertEqual(json_response[0]["id"], 1)
+
+        # Request products using decimal query param
+        url = "/products?min_price=14.99"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.get(url, None, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(json_response), 1)
+        self.assertEqual(json_response[0]["id"], 1)
+
     # TODO: Delete product
 
     # TODO: Product can be rated. Assert average rating exists.
