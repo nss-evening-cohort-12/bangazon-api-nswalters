@@ -108,7 +108,7 @@ class Products(ViewSet):
         try:
             new_product.clean_fields()
         except ValidationError as ex:
-            return Response({"message": ex.args[0]}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"message": ex.args[0]}, status=status.HTTP_400_BAD_REQUEST)
 
         new_product.save()
 
@@ -192,6 +192,12 @@ class Products(ViewSet):
         product_category = ProductCategory.objects.get(
             pk=request.data["category_id"])
         product.category = product_category
+
+        try:
+            product.clean_fields()
+        except ValidationError as ex:
+            return Response({"message": ex.args[0]}, status=status.HTTP_400_BAD_REQUEST)
+
         product.save()
 
         return Response({}, status=status.HTTP_204_NO_CONTENT)
