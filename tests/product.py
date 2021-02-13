@@ -10,12 +10,22 @@ class ProductTests(APITestCase):
         """
         Create a new account and create sample category
         """
+        # Creates primary user
         url = "/register"
         data = {"username": "steve", "password": "Admin8*", "email": "steve@stevebrownlee.com",
                 "address": "100 Infinity Way", "phone_number": "555-1212", "first_name": "Steve", "last_name": "Brownlee"}
         response = self.client.post(url, data, format='json')
         json_response = json.loads(response.content)
         self.token = json_response["token"]
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Create secondary user
+        url = "/register"
+        data = {"username": "secondary", "password": "Admin8*", "email": "secondary@stevebrownlee.com",
+                "address": "100 Infinity Way", "phone_number": "555-1212", "first_name": "Steve", "last_name": "Brownlee"}
+        response = self.client.post(url, data, format='json')
+        json_response = json.loads(response.content)
+        self.token_secondary = json_response["token"]
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         url = "/productcategories"
@@ -409,7 +419,6 @@ class ProductTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    # TODO: Delete product
     def test_delete_product(self):
         """
         Ensure we can delete a product
@@ -437,4 +446,76 @@ class ProductTests(APITestCase):
         self.assertEqual(len(json_response), 1)
         self.assertEqual(json_response[0]["id"], 1)
 
-    # TODO: Product can be rated. Assert average rating exists.
+    def test_rate_product(self):
+        """
+        Ensure we can rate a product
+        """
+
+        # Create test product
+        self.test_create_product()
+
+        # Attempt to rate the product with primary user
+        url = "/products/1/rate"
+        data = {
+            "rating": 5
+        }
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # With the primary user:
+        # Get product and validate rating exists and is set properly
+        # as well as that 'can_be_rated' is set to false
+        url = "/products/1"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.get(url, None, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(json_response["id"], 1)
+        self.assertEqual(json_response["average_rating"], 5.0)
+        self.assertEqual(json_response["can_be_rated"], False)
+
+        # Rate the product with the secondary user
+        url = "/products/1/rate"
+        data = {
+            "rating": 1
+        }
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + self.token_secondary)
+        response = self.client.post(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # With the secondary user:
+        # Get product and validate rating exists and is set properly
+        # as well as that 'can_be_rated' is set to false
+        url = "/products/1"
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + self.token_secondary)
+        response = self.client.get(url, None, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(json_response["id"], 1)
+        self.assertEqual(json_response["average_rating"], 3.0)
+        self.assertEqual(json_response["can_be_rated"], False)
+
+    def test_duplicate_ratings_not_allowed(self):
+        """
+        Ensure a user cannot rate a product more than once
+        """
+
+        # Create initial ratings
+        self.test_rate_product()
+
+        # Test rating our product again
+        url = "/products/1/rate"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, None, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(json_response["message"],
+                         "You've already rated this product.")
