@@ -2,12 +2,14 @@
 import base64
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.db import IntegrityError
 from django.http import HttpResponseServerError
+from rest_framework.decorators import action
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework import status
-from bangazonapi.models import Product, Customer, ProductCategory
+from bangazonapi.models import Product, Customer, ProductCategory, LikeProduct
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
 
@@ -304,3 +306,82 @@ class Products(ViewSet):
         serializer = ProductSerializer(
             products, many=True, context={'request': request})
         return Response(serializer.data)
+
+    @action(methods=['post', 'delete'], detail=True)
+    def like(self, request, pk=None):
+
+        if request.method == "POST":
+            try:
+                customer = Customer.objects.get(user=request.auth.user)
+
+            except Customer.DoesNotExist as ex:
+                return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+
+            try:
+                liked_product = Product.objects.get(pk=pk)
+
+            except Product.DoesNotExist as ex:
+                return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+
+            new_liked_product = LikeProduct()
+            new_liked_product.customer = customer
+            new_liked_product.product = liked_product
+
+            try:
+                new_liked_product.save()
+            except IntegrityError:
+                return Response({"message": "You have already liked that product."}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({}, status=status.HTTP_204_NO_CONTENT)
+
+        if request.method == "DELETE":
+            try:
+                liked_product = LikeProduct.objects.get(product__id=pk)
+            except LikeProduct.DoesNotExist as ex:
+                return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+
+            liked_product.delete()
+
+            return Response({}, status=status.HTTP_204_NO_CONTENT)
+
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @action(methods=['get'], detail=False)
+    def liked(self, request):
+        customer = Customer.objects.get(user=request.auth.user)
+        liked_products = LikeProduct.objects.filter(customer=customer)
+
+        serializer = LikedSerializer(
+            liked_products, many=True, context={'request': request}
+        )
+
+        return Response(serializer.data)
+
+
+class ProductLikeSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    JSON seralizer for liked products
+
+    Arguments:
+        serializers
+    """
+
+    class Meta:
+        model = Product
+        fields = ('id', 'url', 'name', 'description')
+
+
+class LikedSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    JSON serializer for liked products
+
+    Arguments:
+        serializers
+    """
+
+    product = ProductLikeSerializer(many=False)
+
+    class Meta:
+        model = LikeProduct
+        fields = ('id', 'product')
+        depth = 2
