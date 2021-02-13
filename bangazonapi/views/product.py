@@ -3,11 +3,12 @@ import base64
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.http import HttpResponseServerError
+from rest_framework.decorators import action
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework import status
-from bangazonapi.models import Product, Customer, ProductCategory
+from bangazonapi.models import Product, Customer, ProductCategory, LikeProduct
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
 
@@ -304,3 +305,54 @@ class Products(ViewSet):
         serializer = ProductSerializer(
             products, many=True, context={'request': request})
         return Response(serializer.data)
+
+    @action(methods=['post', 'delete'], detail=True)
+    def like(self, request, pk=None):
+        if request.method == "POST":
+            return Response({"message": "You've hit the POST endpoint for pk: " + pk}, status=status.HTTP_200_OK)
+
+        if request.method == "DELETE":
+            return Response({"message": "You've hit the DELETE endpoint for pk: " + pk}, status=status.HTTP_200_OK)
+
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @action(methods=['get'], detail=False)
+    def liked(self, request):
+        customer = Customer.objects.get(user=request.auth.user)
+        liked_products = LikeProduct.objects.filter(customer=customer)
+
+        serializer = LikedSerializer(
+            liked_products, many=True, context={'request': request}
+        )
+
+        return Response(serializer.data)
+        # return Response({"message": "The liked products will go here."}, status=status.HTTP_200_OK)
+
+
+class ProductLikeSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    JSON seralizer for liked products
+
+    Arguments:
+        serializers
+    """
+
+    class Meta:
+        model = Product
+        fields = ('id', 'url', 'name', 'description')
+
+
+class LikedSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    JSON serializer for liked products
+
+    Arguments:
+        serializers
+    """
+
+    product = ProductLikeSerializer(many=False)
+
+    class Meta:
+        model = LikeProduct
+        fields = ('id', 'product')
+        depth = 2
