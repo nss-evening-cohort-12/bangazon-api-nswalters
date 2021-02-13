@@ -1,5 +1,6 @@
 """View module for handling requests about customer profiles"""
 import datetime
+from django.db import IntegrityError
 from django.http import HttpResponseServerError
 from django.contrib.auth.models import User
 from rest_framework import serializers, status
@@ -313,7 +314,11 @@ class Profile(ViewSet):
             new_favorite = Favorite()
             new_favorite.customer = customer
             new_favorite.seller = seller
-            new_favorite.save()
+
+            try:
+                new_favorite.save()
+            except IntegrityError:
+                return Response({'message': "You have already favorited that seller."}, status=status.HTTP_400_BAD_REQUEST)
 
             return Response({}, status=status.HTTP_204_NO_CONTENT)
 
