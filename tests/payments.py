@@ -93,3 +93,28 @@ class PaymentTests(APITestCase):
         self.assertEqual(len(json_response), 2)
 
     # TODO: Delete payment type
+    def test_delete_payment_type(self):
+        """
+        Ensure we can delete a payment type
+        """
+
+        # Create payment types for primary user
+        self.test_create_payment_type()
+        self.test_create_payment_type()
+
+        # Delete a payment
+        url = "/paymenttypes/1"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.delete(url, None, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Verify we have deleted the payment type
+        url = "/paymenttypes"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.get(url, None, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(json_response), 1)
+        self.assertEqual(json_response[0]["id"], 2)
