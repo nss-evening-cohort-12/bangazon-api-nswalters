@@ -127,3 +127,26 @@ class ProfileTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(json_response), 1)
         self.assertEqual(json_response[0]["id"], 1)
+
+    def test_reject_favorite_of_seller_already_favorited(self):
+        """
+        Ensure we cannot favorite a seller that is already favorited by the user
+        """
+
+        # Add the initial favorite seller
+        self.test_add_new_favorite_seller()
+
+        # Verify if we try to add that same seller as a favorite again
+        # that we get an error back
+        url = "/profile/favoritesellers"
+        data = {
+            "seller": 1
+        }
+        self.client.credentials(
+            HTTP_AUTHORIZATION="Token " + self.new_user1_token)
+        response = self.client.post(url, data, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(json_response["message"],
+                         "You have already favorited that seller.")
