@@ -339,6 +339,76 @@ class ProductTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(json_response), 0)
 
+    def test_like_product(self):
+        """
+        Ensure that we can like a product
+        """
+
+        # create initial product
+        self.test_create_product()
+
+        # Like the product
+        url = "/products/1/like"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, None, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Verify product was liked
+        url = "/products/liked"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.get(url, None, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(json_response), 1)
+        self.assertEqual(json_response[0]["id"], 1)
+
+    def test_not_like_product_twice(self):
+        """
+        Ensure that we cannot like a product more than once
+        """
+
+        # create initial product
+        self.test_like_product()
+
+        # Attempt to like the product again
+        url = "/products/1/like"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, None, format='json')
+        json_response = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(json_response["message"],
+                         "You have already liked that product.")
+
+    def test_unlike_product(self):
+        """
+        Ensure we can unlike a product
+        """
+
+        # Like our product
+        self.test_like_product()
+
+        # Verify product was unliked
+        url = "/products/1/like"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.delete(url, None, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_unlike_product_does_not_exist(self):
+        """
+        Ensure we cannot unlike a product that doesn't exist and handle it gracefully
+        """
+
+        # Attempt to unlike a product that doesn't exist
+        url = "/products/12312312/like"
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.delete(url, None, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
     # TODO: Delete product
 
     # TODO: Product can be rated. Assert average rating exists.
