@@ -2,6 +2,7 @@
 import base64
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.db import IntegrityError
 from django.http import HttpResponseServerError
 from rest_framework.decorators import action
 from rest_framework.viewsets import ViewSet
@@ -308,11 +309,40 @@ class Products(ViewSet):
 
     @action(methods=['post', 'delete'], detail=True)
     def like(self, request, pk=None):
+
         if request.method == "POST":
-            return Response({"message": "You've hit the POST endpoint for pk: " + pk}, status=status.HTTP_200_OK)
+            try:
+                customer = Customer.objects.get(user=request.auth.user)
+
+            except Customer.DoesNotExist as ex:
+                return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+
+            try:
+                liked_product = Product.objects.get(pk=pk)
+
+            except Product.DoesNotExist as ex:
+                return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+
+            new_liked_product = LikeProduct()
+            new_liked_product.customer = customer
+            new_liked_product.product = liked_product
+
+            try:
+                new_liked_product.save()
+            except IntegrityError:
+                return Response({"message": "You have already liked that product."}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({}, status=status.HTTP_204_NO_CONTENT)
 
         if request.method == "DELETE":
-            return Response({"message": "You've hit the DELETE endpoint for pk: " + pk}, status=status.HTTP_200_OK)
+            try:
+                liked_product = LikeProduct.objects.get(product__id=pk)
+            except LikeProduct.DoesNotExist as ex:
+                return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+
+            liked_product.delete()
+
+            return Response({}, status=status.HTTP_204_NO_CONTENT)
 
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -326,7 +356,6 @@ class Products(ViewSet):
         )
 
         return Response(serializer.data)
-        # return Response({"message": "The liked products will go here."}, status=status.HTTP_200_OK)
 
 
 class ProductLikeSerializer(serializers.HyperlinkedModelSerializer):
