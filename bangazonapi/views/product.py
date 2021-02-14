@@ -9,7 +9,7 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework import status
-from bangazonapi.models import Product, Customer, ProductCategory, LikeProduct
+from bangazonapi.models import Product, Customer, ProductCategory, LikeProduct, ProductRating
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
 
@@ -160,9 +160,19 @@ class Products(ViewSet):
         """
         try:
             product = Product.objects.get(pk=pk)
+            customer = Customer.objects.get(user=request.auth.user)
+
+            # Check if a rating for the product/customer combo exists
+            #
+            # If a rating exists, then set `can_be_rated` to False
+            # Else, set it to True
+            product.can_be_rated = not ProductRating.objects.filter(
+                customer=customer, product=product).exists()
+
             serializer = ProductSerializer(
                 product, context={'request': request})
             return Response(serializer.data)
+
         except Exception as ex:
             return HttpResponseServerError(ex)
 
@@ -306,6 +316,45 @@ class Products(ViewSet):
         serializer = ProductSerializer(
             products, many=True, context={'request': request})
         return Response(serializer.data)
+
+    @action(methods=['post'], detail=True)
+    def rate(self, request, pk=None):
+
+        if request.method == "POST":
+            try:
+                customer = Customer.objects.get(user=request.auth.user)
+
+            except Customer.DoesNotExist as ex:
+                return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+
+            try:
+                product = Product.objects.get(pk=pk)
+
+            except Product.DoesNotExist as ex:
+                return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+
+            product_can_be_rated = not ProductRating.objects.filter(
+                customer=customer, product=product).exists()
+
+            if not product_can_be_rated:
+                return Response({"message": "You've already rated this product."}, status=status.HTTP_400_BAD_REQUEST)
+
+            rated_product = ProductRating()
+            rated_product.customer = customer
+            rated_product.product = product
+            rated_product.rating = request.data["rating"]
+
+            try:
+                rated_product.clean_fields()
+                rated_product.save()
+            except ValidationError as ex:
+                return Response({"message": ex.args[0]}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({}, status=status.HTTP_204_NO_CONTENT)
+
+            # return Response({"message": "You've just rated a product: " + pk + " with rating: " + str(request.data["rating"])})
+
+        return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     @action(methods=['post', 'delete'], detail=True)
     def like(self, request, pk=None):
