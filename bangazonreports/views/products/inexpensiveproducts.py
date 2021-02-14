@@ -1,4 +1,4 @@
-"""Module for generating expensive products report"""
+"""Module for generating inexpensive products report"""
 import sqlite3
 from django.shortcuts import render
 from bangazonapi.models import Product
@@ -6,7 +6,7 @@ from bangazonreports.views import Connection
 
 
 def list_inexpensive_products(request):
-    """Function to build an HTML report of expensive products"""
+    """Function to build an HTML report of inexpensive products"""
     if request.method == "GET":
         with sqlite3.connect(Connection.db_path) as conn:
             conn.row_factory = sqlite3.Row
