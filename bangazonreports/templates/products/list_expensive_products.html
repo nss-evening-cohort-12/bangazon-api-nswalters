@@ -30,23 +30,23 @@
     <table>
         <thead>
             <tr>
-                <th>Name</th>
                 <th>Price</th>
                 <th>Description</th>
+                <th>Name</th>
                 <th>Quantity</th>
-                <th>Created Date</th>
                 <th>Location</th>
+                <th>Created Date</th>
             </tr>
         </thead>
         <tbody>
             {% for product in product_list %}
                 <tr>
-                    <td>{{ product.name }}</td>
                     <td>{{ product.price }}</td>
                     <td>{{ product.description }}</td>
+                    <td>{{ product.name }}</td>
                     <td>{{ product.quantity }}</td>
-                    <td>{{ product.created_date }}</td>
                     <td>{{ product.location }}</td>
+                    <td>{{ product.created_date }}</td>
                 </tr>
             {% endfor %}
         </tbody>
