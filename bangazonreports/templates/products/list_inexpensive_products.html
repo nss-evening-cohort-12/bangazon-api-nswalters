@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Bangazon Reports</title>
+    <style>
+        td {
+            text-align: center;
+            padding: 3px;
+        }
+
+        th {
+            padding: 5px;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+
+        tr:nth-child(even),th {
+            background-color: #dddddd;
+        }
+    </style>
+  </head>
+  <body>
+    <h1>Inexpensive Products (price < $1000.00)</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Price</th>
+                <th>Description</th>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Location</th>
+                <th>Created Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in product_list %}
+                <tr>
+                    <td>{{ product.price }}</td>
+                    <td>{{ product.description }}</td>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.quantity }}</td>
+                    <td>{{ product.location }}</td>
+                    <td>{{ product.created_date }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </body>
+</html>
