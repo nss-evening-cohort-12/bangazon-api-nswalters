@@ -1,0 +1,19 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Bangazon Reports</title>
+    </head>
+    <body>
+        <h1>Favorited Sellers by Customer</h1>
+        {% for customer,sellers in favorited_sellers.items %}
+            <h2>{{ customer }}</h2>
+            {% for seller in sellers %}
+                <ul>
+                    <li>{{ seller }}</li>
+                </ul>
+            {% endfor %}
+        {% endfor %}
+    </body>
+</html>
